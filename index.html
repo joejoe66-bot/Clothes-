@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="衣櫃">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#F4F0EA">
+  <title>衣櫃</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <script src="config.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <style>
+    :root {
+      --bg: #F4F0EA;
+      --bg-2: #EBE5DC;
+      --card: #FFFcf8;
+      --ink: #171412;
+      --muted: #7A7268;
+      --line: #E6DED4;
+      --accent: #8C3A24;
+      --accent-soft: #F3E2DA;
+      --ok: #3E6B4F;
+      --ok-bg: #E5F0E8;
+      --laundry: #4E5E73;
+      --laundry-bg: #E6EBF1;
+      --repair: #9A4A2E;
+      --repair-bg: #F6E6E0;
+      --shadow: 0 10px 28px rgba(23, 20, 18, 0.08);
+      --radius: 22px;
+      --header-h: 0px;
+      --tab-h: calc(64px + env(safe-area-inset-bottom));
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: "PingFang TC", "Noto Sans TC", "Hiragino Sans GB", -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100dvh;
+      padding-bottom: calc(var(--tab-h) + 12px);
+      overflow-x: hidden;
+    }
+    button, input, select, textarea { font-family: inherit; }
+    button { color: inherit; }
+    .serif { font-family: "Songti TC", "Noto Serif TC", "Hiragino Mincho ProN", "Songti SC", serif; }
+
+    header.app-header {
+      position: sticky; top: 0; z-index: 20;
+      background: color-mix(in srgb, var(--bg) 88%, white);
+      backdrop-filter: saturate(1.2) blur(16px);
+      -webkit-backdrop-filter: saturate(1.2) blur(16px);
+      padding: calc(10px + env(safe-area-inset-top)) 20px 10px;
+    }
+    .header-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+    .header-main { min-width: 0; }
+    header h1 {
+      margin: 0; font-size: clamp(24px, 6.5vw, 30px); font-weight: 600; letter-spacing: 0.06em; line-height: 1.1;
+    }
+    .header-date { margin: 0 0 4px; font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+    .header-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+    .lang-toggle {
+      display: flex; align-items: center; background: var(--card);
+      border-radius: 999px; padding: 3px;
+      box-shadow: inset 0 0 0 1px var(--line);
+    }
+    .lang-toggle button {
+      border: 0; background: transparent; color: var(--muted);
+      border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 700;
+      min-height: 32px; letter-spacing: 0.02em;
+    }
+    .lang-toggle button.on { background: var(--ink); color: #fff; }
+    .icon-btn {
+      width: 42px; height: 42px; border: 0; border-radius: 50%;
+      background: var(--card); box-shadow: 0 1px 0 rgba(23,20,18,0.04);
+      display: grid; place-items: center; padding: 0;
+    }
+    .search-wrap { margin-top: 12px; position: relative; }
+    .search-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+    .search {
+      width: 100%; border: 0; border-radius: 999px;
+      padding: 12px 16px 12px 42px; font-size: 16px;
+      background: var(--card); color: var(--ink); outline: none;
+      box-shadow: inset 0 0 0 1px var(--line);
+    }
+    .search:focus { box-shadow: inset 0 0 0 1.5px var(--ink); }
+
+    .filters {
+      display: flex; gap: 8px; overflow-x: auto;
+      padding: 8px 20px 4px;
+      scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    }
+    .filters::-webkit-scrollbar { display: none; }
+    .chip {
+      flex: 0 0 auto; border: 0; background: var(--card);
+      color: var(--ink); border-radius: 999px;
+      padding: 9px 14px; font-size: 13px; font-weight: 600;
+      box-shadow: inset 0 0 0 1px var(--line);
+      min-height: 36px;
+    }
+    .chip.active { background: var(--ink); color: #fff; box-shadow: none; }
+
+    .count-bar { padding: 6px 20px 10px; font-size: 12px; color: var(--muted); }
+
+    .grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+      padding: 0 16px 16px;
+    }
+    @media (min-width: 720px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+    .card {
+      background: var(--card); border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow); cursor: pointer;
+      display: flex; flex-direction: column;
+      transition: transform .15s ease;
+    }
+    .card:active { transform: scale(0.98); }
+    .photo {
+      aspect-ratio: 3 / 4; background: #EFE6DC center/cover no-repeat;
+      position: relative;
+    }
+    .photo .placeholder {
+      width: 100%; height: 100%; display: flex; align-items: flex-end;
+      padding: 16px; font-size: 22px; letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.92);
+      background: linear-gradient(160deg, var(--c1, #C4B4A4), var(--c2, #7A6556));
+      font-family: "Songti TC", "Noto Serif TC", serif;
+    }
+    .badge {
+      position: absolute; top: 10px; left: 10px;
+      font-size: 11px; font-weight: 650; padding: 4px 8px; border-radius: 999px;
+      backdrop-filter: blur(8px);
+    }
+    .badge.ok { background: var(--ok-bg); color: var(--ok); }
+    .badge.laundry { background: var(--laundry-bg); color: var(--laundry); }
+    .badge.repair { background: var(--repair-bg); color: var(--repair); }
+    .card-body { padding: 10px 12px 14px; }
+    .card-body h3 {
+      margin: 0; font-size: 15px; font-weight: 650;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .meta { margin-top: 3px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+    .empty { text-align: center; padding: 56px 28px 24px; color: var(--muted); }
+    .empty h2 { color: var(--ink); font-size: 22px; margin: 0 0 8px; font-weight: 600; }
+    .empty p { margin: 0 auto 18px; max-width: 260px; line-height: 1.6; font-size: 14px; }
+
+    .hero-today {
+      margin: 4px 16px 16px; padding: 22px 20px;
+      background: var(--ink); color: #F7F1EA;
+      border-radius: 28px;
+    }
+    .hero-today .kicker { margin: 0; font-size: 12px; letter-spacing: 0.12em; color: #C9B8A8; }
+    .hero-today h2 { margin: 6px 0 8px; font-size: 28px; font-weight: 600; letter-spacing: 0.04em; }
+    .hero-today p { margin: 0; font-size: 14px; color: #E6D9CC; line-height: 1.55; }
+
+    .outfit-card {
+      background: var(--card); border-radius: var(--radius);
+      padding: 16px; margin: 0 16px 12px; box-shadow: var(--shadow); cursor: pointer;
+    }
+    .outfit-card:active { transform: scale(0.99); }
+    .outfit-card h3 { margin: 0 0 4px; font-size: 17px; }
+    .thumbs { display: flex; gap: 8px; margin-top: 12px; overflow-x: auto; scrollbar-width: none; }
+    .thumbs::-webkit-scrollbar { display: none; }
+    .thumbs i {
+      width: 72px; height: 90px; flex: 0 0 auto; border-radius: 14px;
+      background: #EFE6DC center/cover no-repeat;
+      display: inline-flex; align-items: flex-end; justify-content: center;
+      color: #fff; font-style: normal; font-size: 11px; font-weight: 650;
+      padding-bottom: 8px;
+    }
+
+    nav.tabbar {
+      position: fixed; left: 12px; right: 12px; bottom: calc(8px + env(safe-area-inset-bottom));
+      z-index: 30;
+      background: rgba(255,252,248,0.92);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border-radius: 24px;
+      display: flex; padding: 6px;
+      box-shadow: 0 10px 30px rgba(23,20,18,0.14);
+    }
+    nav.tabbar button {
+      flex: 1; border: 0; background: none; color: var(--muted);
+      padding: 8px 0 6px; font-size: 10px; font-weight: 650; border-radius: 18px;
+    }
+    nav.tabbar button.active { color: var(--ink); background: var(--bg-2); }
+    nav.tabbar button svg { display: block; margin: 0 auto 2px; }
+
+    .fab {
+      position: fixed; right: 16px; bottom: calc(var(--tab-h) + 10px);
+      width: 56px; height: 56px; border: 0; border-radius: 50%;
+      background: var(--ink); color: #fff;
+      box-shadow: 0 12px 24px rgba(23,20,18,0.28); z-index: 25; cursor: pointer;
+      display: grid; place-items: center;
+    }
+
+    .modal {
+      position: fixed; inset: 0; background: rgba(23, 20, 18, 0.45);
+      z-index: 40; display: flex; align-items: flex-end; justify-content: center;
+    }
+    .sheet {
+      background: var(--bg); width: 100%; max-width: 560px;
+      border-radius: 28px 28px 0 0; max-height: 94dvh; overflow: auto;
+      padding: 0 0 calc(20px + env(safe-area-inset-bottom));
+    }
+    .handle { width: 36px; height: 4px; background: #D4CBBF; border-radius: 99px; margin: 10px auto 0; }
+    .sheet-head { padding: 8px 20px 12px; display: flex; align-items: center; justify-content: space-between; }
+    .sheet-head h2 { margin: 0; font-size: 22px; font-weight: 600; }
+    .sheet-body { padding: 0 20px; }
+    .hero-photo {
+      margin: 0 20px 16px; border-radius: 22px; overflow: hidden;
+      aspect-ratio: 4 / 5; background: #EFE6DC center/cover no-repeat;
+    }
+    .hero-photo .placeholder {
+      width: 100%; height: 100%; display: flex; align-items: flex-end;
+      padding: 20px; font-size: 32px; color: #fff;
+      background: linear-gradient(160deg, var(--c1, #C4B4A4), var(--c2, #7A6556));
+      font-family: "Songti TC", "Noto Serif TC", serif;
+    }
+    .detail-name { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: 0.02em; }
+    .pills { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
+    .pill {
+      background: var(--card); border-radius: 999px; padding: 6px 10px;
+      font-size: 12px; color: var(--muted); box-shadow: inset 0 0 0 1px var(--line);
+    }
+    .detail-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+    .detail-row span { color: var(--muted); }
+
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 650; }
+    .field input, .field select, .field textarea {
+      width: 100%; border: 0; border-radius: 14px;
+      padding: 13px 14px; font-size: 16px; background: var(--card);
+      box-shadow: inset 0 0 0 1px var(--line); outline: none; -webkit-appearance: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { box-shadow: inset 0 0 0 1.5px var(--ink); }
+    .seg { display: flex; flex-wrap: wrap; gap: 8px; }
+    .seg button {
+      border: 0; background: var(--card); color: var(--ink);
+      border-radius: 999px; padding: 9px 13px; font-size: 13px; font-weight: 650;
+      box-shadow: inset 0 0 0 1px var(--line); min-height: 40px;
+    }
+    .seg button.on { background: var(--ink); color: #fff; box-shadow: none; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .actions {
+      display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;
+      padding: 12px 20px 0; position: sticky; bottom: 0;
+      background: linear-gradient(180deg, transparent, var(--bg) 18%);
+    }
+    .btn {
+      border: 0; border-radius: 999px; padding: 14px 16px; font-size: 15px; font-weight: 650; cursor: pointer;
+      min-height: 48px;
+    }
+    .btn.primary { background: var(--ink); color: #fff; flex: 1; }
+    .btn.ghost { background: var(--card); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+    .btn.danger { background: #F6E6E0; color: #8C2F1B; }
+    .btn.wide { width: 100%; }
+
+    .toast {
+      position: fixed; left: 50%; bottom: calc(var(--tab-h) + 18px);
+      transform: translateX(-50%); background: var(--ink); color: #fff;
+      padding: 12px 16px; border-radius: 999px; font-size: 13px; z-index: 50;
+      opacity: 0; pointer-events: none; transition: opacity .2s; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    .picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0 4px; }
+    .pick {
+      border: 0; border-radius: 16px; overflow: hidden; cursor: pointer; background: var(--card);
+      box-shadow: inset 0 0 0 1px var(--line);
+    }
+    .pick.selected { box-shadow: inset 0 0 0 2px var(--ink); }
+    .pick .mini { aspect-ratio: 1; background: #EFE6DC center/cover no-repeat; }
+    .pick p { margin: 0; padding: 7px 6px 9px; font-size: 11px; text-align: center; font-weight: 650; }
+
+    .hidden { display: none !important; }
+    .loading { text-align: center; padding: 56px 24px; color: var(--muted); }
+    .sk { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px; }
+    .sk > div { height: 240px; border-radius: var(--radius); background: linear-gradient(90deg, #EBE5DC, #F7F2EC, #EBE5DC); background-size: 200% 100%; animation: shine 1.2s infinite; }
+
+    .banner {
+      margin: 0 16px 12px; padding: 12px 14px; border-radius: 16px;
+      background: var(--card); box-shadow: inset 0 0 0 1px var(--line);
+      font-size: 13px; color: var(--muted); line-height: 1.55;
+    }
+    .banner strong { color: var(--ink); }
+    .auth-card {
+      background: var(--bg); width: 100%; max-width: 560px;
+      border-radius: 28px 28px 0 0; padding: 20px 22px calc(28px + env(safe-area-inset-bottom));
+      text-align: left;
+    }
+    .auth-card h2 { margin: 8px 0 8px; font-size: 28px; }
+    .auth-card p { margin: 0 0 18px; color: var(--muted); line-height: 1.6; }
+    @keyframes shine { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-row">
+      <div class="header-main">
+        <p class="header-date" id="headerDate"></p>
+        <h1 class="serif" id="title">衣櫃</h1>
+      </div>
+      <div class="header-actions">
+        <div class="lang-toggle" id="langToggle" role="group" aria-label="語言">
+          <button type="button" id="langZh" data-lang="zh" aria-pressed="true">中文</button>
+          <button type="button" id="langEn" data-lang="en" aria-pressed="false">English</button>
+        </div>
+        <button class="icon-btn" id="searchToggle" type="button" aria-label="搜尋">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="search-wrap hidden" id="searchWrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input class="search" id="search" type="search" placeholder="搜尋名稱、顏色、品牌或位置" autocomplete="off" enterkeyhint="search">
+    </div>
+  </header>
+
+  <div class="filters" id="filters"></div>
+  <div class="count-bar" id="countBar"></div>
+  <div class="banner hidden" id="setupBanner"></div>
+
+  <section id="view-closet">
+    <div class="grid" id="clothesGrid"></div>
+  </section>
+
+  <section id="view-today" class="hidden">
+    <div id="todayIntro"></div>
+    <div class="filters" id="todayFilters"></div>
+    <div class="grid" id="todayGrid"></div>
+  </section>
+
+  <section id="view-outfits" class="hidden">
+    <div id="outfitsList"></div>
+  </section>
+
+  <button class="fab" id="fab" type="button" aria-label="新增">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+
+  <nav class="tabbar">
+    <button type="button" data-view="closet" class="active">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16v14H4z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/><path d="M12 12v4"/></svg>
+      <span class="tab-label">衣櫃</span>
+    </button>
+    <button type="button" data-view="today">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+      <span class="tab-label">今天穿</span>
+    </button>
+    <button type="button" data-view="outfits">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="8" height="10" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/><rect x="3" y="16" width="8" height="4" rx="1.5"/></svg>
+      <span class="tab-label">搭配</span>
+    </button>
+  </nav>
+
+
+  <div class="modal hidden" id="authScreen">
+    <div class="auth-card">
+      <div class="handle"></div>
+      <h2 class="serif" id="authTitle">登入後打開衣櫃</h2>
+      <p id="authBody">用你的 Google 帳號連接「衣櫃收納」試算表，衣服會存在雲端，換手機也不會丟。</p>
+      <button class="btn primary wide" id="googleSignIn" type="button">使用 Google 登入</button>
+    </div>
+  </div>
+  <div class="modal hidden" id="modal"></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="js/api.js"></script>
+  <script>
+    var PALETTE = {
+      '黑': ['#3A3A3A', '#111111'], '白': ['#F5F0E8', '#C9C0B4'], '白／米': ['#F5F0E8', '#C9C0B4'],
+      '米': ['#E8D9C4', '#B89B78'], '灰': ['#C5C0B8', '#6F6A64'], '藍': ['#7F9BB8', '#2F4A66'],
+      '深藍': ['#5A6F88', '#1E2D40'], '淺藍': ['#B9D0E0', '#6B8CA3'],
+      '紅': ['#C96A5A', '#7A2A22'], '粉': ['#E7B7B4', '#C07A78'], '棕': ['#C4A484', '#6B4A32'],
+      '綠': ['#8AA686', '#3C5A40'], '卡其': ['#D7C4A3', '#8A704C'], '黃': ['#E6C86A', '#B0892A'],
+      '紫': ['#B09BC4', '#5A4270'], '橘': ['#E09A62', '#A14C22']
+    };
+
+    var state = {
+      data: { clothes: [], outfits: [], options: { '類別': [], '季節': [], '場合': [], '狀態': [] }, today: '' },
+      view: 'closet',
+      query: '',
+      filters: { '類別': '', '季節': '', '場合': '', '狀態': '' },
+      todayOccasion: '',
+      selectedIds: [],
+      demo: false,
+      lang: 'zh',
+      sheet: null,
+      ready: false,
+      loadError: ''
+    };
+
+    var STR = {
+      zh: {
+        'tab.closet': '衣櫃',
+        'tab.today': '今天穿',
+        'tab.outfits': '搭配',
+        'search.aria': '搜尋',
+        'search.placeholder': '搜尋名稱、顏色、品牌或位置',
+        'lang.group': '語言',
+        'fab.outfit': '新增搭配',
+        'fab.clothes': '新增衣服',
+        'auth.title': '登入後打開衣櫃',
+        'auth.body': '用你的 Google 帳號連接「衣櫃收納」試算表，衣服會存在雲端，換手機也不會丟。',
+        'auth.button': '使用 Google 登入',
+        'filter.all': '全部',
+        'filter.season': '季節',
+        'filter.occasion': '場合',
+        'filter.status': '狀態',
+        'filter.allOccasions': '全部場合',
+        'empty.closet.title': '衣櫃還是空的',
+        'empty.closet.body': '把衣服記下來，之後要選穿就不用翻箱倒櫃。',
+        'empty.closet.cta': '新增第一件',
+        'empty.filter.title': '沒有符合的衣服',
+        'empty.filter.body': '點一下上面的篩選，換個類別或季節再看。',
+        'count': '顯示 {shown} / {total} 件',
+        'today.body': '只顯示現在可穿、也適合這個季節的衣服。點一件就可以記下今天穿了。',
+        'empty.today.title': '暫時沒有可選的衣服',
+        'empty.today.body': '把衣服加進衣櫃，或把狀態改回「可穿」後再來看。',
+        'empty.outfits.title': '還沒有搭配',
+        'empty.outfits.body': '選好幾件衣服存成一套，以後出門就不用重新想。',
+        'empty.outfits.cta': '建立搭配',
+        'outfit.one': '{n} 件',
+        'outfit.many': '{n} 件',
+        'outfit.unmatched': '尚未對應到衣服',
+        'unnamed': '未命名',
+        'photo.fallback': '衣',
+        'detail.title': '衣服詳情',
+        'close': '關閉',
+        'field.brand': '品牌',
+        'field.locationShort': '放在',
+        'field.lastWorn': '上次穿著',
+        'field.purchased': '購入日期',
+        'field.notes': '備註',
+        'action.wore': '今天穿了',
+        'action.edit': '編輯',
+        'action.delete': '刪除',
+        'confirm.deleteItem': '確定刪除這件衣服？',
+        'toast.worn': '已記下今天穿過',
+        'toast.updateFail': '更新失敗',
+        'toast.deleted': '已刪除',
+        'toast.deleteFail': '刪除失敗',
+        'editor.add': '新增衣服',
+        'editor.edit': '編輯衣服',
+        'field.name': '名稱',
+        'field.category': '類別',
+        'field.color': '顏色',
+        'field.season': '季節',
+        'field.occasion': '場合',
+        'field.location': '存放位置',
+        'field.status': '狀態',
+        'field.photo': '照片網址',
+        'action.save': '儲存',
+        'toast.saved': '已儲存',
+        'toast.saveFail': '儲存失敗',
+        'outfit.edit': '編輯搭配',
+        'outfit.create': '建立搭配',
+        'field.outfitName': '搭配名稱',
+        'field.pick': '選擇衣服（可多件）',
+        'outfit.needClothes': '請先在衣櫃裡加入衣服',
+        'action.saveOutfit': '儲存搭配',
+        'toast.outfitSaved': '搭配已儲存',
+        'confirm.deleteOutfit': '確定刪除這個搭配？',
+        'toast.outfitDeleted': '已刪除搭配',
+        'error.load': '載入失敗',
+        'setup.title': '還差一步就能連到衣櫃',
+        'setup.body': '在 config.js 填入 Google OAuth Client ID 後重新整理，就能登入並讀取你的試算表。',
+        'setup.banner': '此 PWA 會把衣服存在 Google 試算表「衣櫃收納」。請先在 <code>config.js</code> 填上 Client ID。說明寫在 README。',
+        'toast.signInFail': '登入失敗',
+        'today.season': '今天是「{season}」',
+        'today.allSeasons': '今天是「四季」'
+      },
+      en: {
+        'tab.closet': 'Closet',
+        'tab.today': 'Today',
+        'tab.outfits': 'Outfits',
+        'search.aria': 'Search',
+        'search.placeholder': 'Search name, color, brand, or location',
+        'lang.group': 'Language',
+        'fab.outfit': 'Add outfit',
+        'fab.clothes': 'Add item',
+        'auth.title': 'Sign in to open your closet',
+        'auth.body': 'Connect the Wardrobe spreadsheet with your Google account. Clothes stay in the cloud when you switch phones.',
+        'auth.button': 'Sign in with Google',
+        'filter.all': 'All',
+        'filter.season': 'Season',
+        'filter.occasion': 'Occasion',
+        'filter.status': 'Status',
+        'filter.allOccasions': 'All occasions',
+        'empty.closet.title': 'Your closet is empty',
+        'empty.closet.body': 'Write your clothes down so picking an outfit later is easy.',
+        'empty.closet.cta': 'Add the first item',
+        'empty.filter.title': 'No matching clothes',
+        'empty.filter.body': 'Try another category or season in the filters above.',
+        'count': 'Showing {shown} of {total}',
+        'today.body': 'Showing clothes you can wear now, for this season. Tap one to log that you wore it today.',
+        'empty.today.title': 'Nothing to wear right now',
+        'empty.today.body': 'Add clothes, or set their status back to wearable.',
+        'empty.outfits.title': 'No outfits yet',
+        'empty.outfits.body': 'Save a few pieces as a set so you do not have to rethink it next time.',
+        'empty.outfits.cta': 'Create outfit',
+        'outfit.one': '{n} item',
+        'outfit.many': '{n} items',
+        'outfit.unmatched': 'No matching clothes',
+        'unnamed': 'Untitled',
+        'photo.fallback': 'Item',
+        'detail.title': 'Item',
+        'close': 'Close',
+        'field.brand': 'Brand',
+        'field.locationShort': 'Stored in',
+        'field.lastWorn': 'Last worn',
+        'field.purchased': 'Purchased',
+        'field.notes': 'Notes',
+        'action.wore': 'Wore today',
+        'action.edit': 'Edit',
+        'action.delete': 'Delete',
+        'confirm.deleteItem': 'Delete this item?',
+        'toast.worn': 'Logged as worn today',
+        'toast.updateFail': 'Could not update',
+        'toast.deleted': 'Deleted',
+        'toast.deleteFail': 'Could not delete',
+        'editor.add': 'Add item',
+        'editor.edit': 'Edit item',
+        'field.name': 'Name',
+        'field.category': 'Category',
+        'field.color': 'Color',
+        'field.season': 'Season',
+        'field.occasion': 'Occasion',
+        'field.location': 'Location',
+        'field.status': 'Status',
+        'field.photo': 'Photo URL',
+        'action.save': 'Save',
+        'toast.saved': 'Saved',
+        'toast.saveFail': 'Could not save',
+        'outfit.edit': 'Edit outfit',
+        'outfit.create': 'Create outfit',
+        'field.outfitName': 'Outfit name',
+        'field.pick': 'Choose clothes (multiple)',
+        'outfit.needClothes': 'Add clothes to your closet first',
+        'action.saveOutfit': 'Save outfit',
+        'toast.outfitSaved': 'Outfit saved',
+        'confirm.deleteOutfit': 'Delete this outfit?',
+        'toast.outfitDeleted': 'Outfit deleted',
+        'error.load': 'Could not load',
+        'setup.title': 'One step left to connect your closet',
+        'setup.body': 'Add a Google OAuth Client ID in config.js, then refresh to sign in and read your spreadsheet.',
+        'setup.banner': 'This PWA stores clothes in the Google spreadsheet “衣櫃收納”. Add a Client ID in <code>config.js</code>. See the README.',
+        'toast.signInFail': 'Sign-in failed',
+        'today.season': 'Today is {season}',
+        'today.allSeasons': 'Today suits every season'
+      }
+    };
+
+    var OPTION_EN = {
+      '春': 'Spring',
+      '夏': 'Summer',
+      '秋': 'Autumn',
+      '冬': 'Winter',
+      '四季': 'All seasons',
+      '可穿': 'Wearable',
+      '洗衣中': 'In laundry',
+      '待修': 'Needs repair',
+      '已捐': 'Donated',
+      '借出': 'Lent out',
+      '收藏': 'Kept',
+      '淘汰': 'Retired',
+      '上衣': 'Top',
+      '下身': 'Bottom',
+      '外套': 'Outerwear',
+      '洋裝': 'Dress',
+      '連身裙': 'Dress',
+      '裙子': 'Skirt',
+      '裙': 'Skirt',
+      '褲子': 'Pants',
+      '長褲': 'Trousers',
+      '短褲': 'Shorts',
+      '牛仔褲': 'Jeans',
+      '鞋子': 'Shoes',
+      '鞋': 'Shoes',
+      '配件': 'Accessory',
+      '飾品': 'Accessory',
+      '包包': 'Bag',
+      '包': 'Bag',
+      '帽子': 'Hat',
+      '帽': 'Hat',
+      '圍巾': 'Scarf',
+      '絲巾': 'Scarf',
+      '內衣': 'Underwear',
+      'T恤': 'T-shirt',
+      '襯衫': 'Shirt',
+      '針織': 'Knit',
+      '毛衣': 'Sweater',
+      '大衣': 'Coat',
+      '夾克': 'Jacket',
+      '背心': 'Vest',
+      '衛衣': 'Sweatshirt',
+      '家居': 'Loungewear',
+      '睡衣': 'Sleepwear',
+      '襪子': 'Socks',
+      '皮帶': 'Belt',
+      '手套': 'Gloves',
+      '日常': 'Everyday',
+      '上班': 'Work',
+      '工作': 'Work',
+      '通勤': 'Commute',
+      '正式': 'Formal',
+      '休閒': 'Casual',
+      '運動': 'Sport',
+      '約會': 'Date',
+      '居家': 'Home',
+      '派對': 'Party',
+      '旅行': 'Travel',
+      '戶外': 'Outdoor',
+      '婚禮': 'Wedding',
+      '面試': 'Interview',
+      '學校': 'School',
+      '商務': 'Business',
+      '度假': 'Vacation',
+      '晚宴': 'Evening'
+    };
+
+    var SEASON_EN_LOWER = { '春': 'spring', '夏': 'summer', '秋': 'autumn', '冬': 'winter' };
+
+    function readStoredLang() {
+      try {
+        return localStorage.getItem('wardrobe-lang') === 'en' ? 'en' : 'zh';
+      } catch (e) {
+        return 'zh';
+      }
+    }
+
+    function t(key, vars) {
+      var table = STR[state.lang] || STR.zh;
+      var s = table[key] != null ? table[key] : (STR.zh[key] != null ? STR.zh[key] : key);
+      if (vars) {
+        Object.keys(vars).forEach(function (k) {
+          s = s.split('{' + k + '}').join(String(vars[k]));
+        });
+      }
+      return s;
+    }
+
+    function optLabel(value) {
+      if (value == null || value === '') return '';
+      var text = String(value);
+      if (state.lang !== 'en') return text;
+      return OPTION_EN[text] || text;
+    }
+
+    function piecesText(n) {
+      return t(n === 1 ? 'outfit.one' : 'outfit.many', { n: n });
+    }
+
+    function todayHeadline(season) {
+      if (season === '四季') return t('today.allSeasons');
+      var shown = state.lang === 'en' ? (SEASON_EN_LOWER[season] || optLabel(season)) : season;
+      return t('today.season', { season: shown });
+    }
+
+    function applyChrome() {
+      document.documentElement.lang = state.lang === 'en' ? 'en' : 'zh-Hant';
+      $('search').placeholder = t('search.placeholder');
+      $('searchToggle').setAttribute('aria-label', t('search.aria'));
+      $('langToggle').setAttribute('aria-label', t('lang.group'));
+      $('langZh').classList.toggle('on', state.lang !== 'en');
+      $('langEn').classList.toggle('on', state.lang === 'en');
+      $('langZh').setAttribute('aria-pressed', state.lang !== 'en' ? 'true' : 'false');
+      $('langEn').setAttribute('aria-pressed', state.lang === 'en' ? 'true' : 'false');
+      var tabs = { closet: 'tab.closet', today: 'tab.today', outfits: 'tab.outfits' };
+      Array.prototype.forEach.call(document.querySelectorAll('nav.tabbar button'), function (btn) {
+        var span = btn.querySelector('.tab-label');
+        var key = tabs[btn.getAttribute('data-view')];
+        if (span && key) span.textContent = t(key);
+      });
+      $('authTitle').textContent = t('auth.title');
+      $('authBody').textContent = t('auth.body');
+      $('googleSignIn').textContent = t('auth.button');
+      $('title').textContent = state.view === 'today' ? t('tab.today') : state.view === 'outfits' ? t('tab.outfits') : t('tab.closet');
+      document.title = $('title').textContent;
+      $('fab').setAttribute('aria-label', state.view === 'outfits' ? t('fab.outfit') : t('fab.clothes'));
+      if (!$('setupBanner').classList.contains('hidden')) $('setupBanner').innerHTML = t('setup.banner');
+    }
+
+    function setLang(next) {
+      state.lang = next === 'en' ? 'en' : 'zh';
+      try { localStorage.setItem('wardrobe-lang', state.lang); } catch (e) {}
+      applyChrome();
+      if (state.loadError) {
+        $('clothesGrid').innerHTML = '<div class="empty" style="grid-column:1/-1"><h2 class="serif">' + escapeHtml(t('error.load')) + '</h2><p>' + escapeHtml(state.loadError) + '</p></div>';
+        return;
+      }
+      if (state.ready) {
+        renderAll();
+        if (state.sheet) reopenSheet();
+        return;
+      }
+      if (needsClientId()) showClientIdSetup();
+    }
+
+    function reopenSheet() {
+      var sheet = state.sheet;
+      if (!sheet) return;
+      if (sheet.type === 'item') openItem(sheet.id);
+      else if (sheet.type === 'editor') openEditor(sheet.id);
+      else if (sheet.type === 'outfit') openOutfitEditor(sheet.id);
+    }
+
+    function $(id) { return document.getElementById(id); }
+
+    function toast(msg) {
+      var el = $('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(function () { el.classList.remove('show'); }, 2200);
+    }
+
+    function run() {
+      return WardrobeAPI.run.apply(WardrobeAPI, arguments);
+    }
+
+    function photoUrl(url) {
+      if (!url) return '';
+      var m = String(url).match(/drive\.google\.com\/file\/d\/([^/]+)/);
+      if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w800';
+      m = String(url).match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (m && url.indexOf('drive.google.com') !== -1) {
+        return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w800';
+      }
+      return url;
+    }
+
+    function currentSeason(today) {
+      var m = 1;
+      if (today && today.length >= 7) m = parseInt(today.slice(5, 7), 10);
+      else m = new Date().getMonth() + 1;
+      if (m >= 3 && m <= 4) return '春';
+      if (m >= 5 && m <= 9) return '夏';
+      if (m >= 10 && m <= 11) return '秋';
+      return '冬';
+    }
+
+    function formatHeaderDate(today) {
+      var d = today && today.length >= 10 ? new Date(today + 'T00:00:00') : new Date();
+      if (isNaN(d.getTime())) d = new Date();
+      if (state.lang === 'en') {
+        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return months[d.getMonth()] + ' ' + d.getDate();
+      }
+      return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+    }
+
+    function statusClass(s) {
+      if (s === '洗衣中') return 'laundry';
+      if (s === '待修') return 'repair';
+      return 'ok';
+    }
+
+    function colorPair(color) {
+      if (!color) return PALETTE['米'];
+      var key = String(color);
+      if (PALETTE[key]) return PALETTE[key];
+      var keys = Object.keys(PALETTE);
+      for (var i = 0; i < keys.length; i++) {
+        if (key.indexOf(keys[i]) !== -1) return PALETTE[keys[i]];
+      }
+      return PALETTE['米'];
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function matchesFilters(item, filters, query) {
+      if (filters['類別'] && item['類別'] !== filters['類別']) return false;
+      if (filters['季節'] && item['季節'] !== filters['季節'] && item['季節'] !== '四季') return false;
+      if (filters['場合'] && item['場合'] !== filters['場合']) return false;
+      if (filters['狀態'] && item['狀態'] !== filters['狀態']) return false;
+      if (query) {
+        var hay = [item['名稱'], item['顏色'], item['品牌'], item['存放位置'], item['備註'], item['編號']].join(' ').toLowerCase();
+        if (hay.indexOf(query.toLowerCase()) === -1) return false;
+      }
+      return true;
+    }
+
+    function photoBlock(item, cls) {
+      var img = photoUrl(item['照片網址']);
+      var pair = colorPair(item['顏色']);
+      if (img) return '<div class="' + cls + '" style="background-image:url(\'' + escapeHtml(img) + '\')">';
+      return '<div class="' + cls + '"><div class="placeholder" style="--c1:' + pair[0] + ';--c2:' + pair[1] + '">' +
+        escapeHtml(item['名稱'] || (item['類別'] ? optLabel(item['類別']) : t('photo.fallback'))) + '</div>';
+    }
+
+    function renderFilters() {
+      var opts = state.data.options;
+      var groups = [
+        { key: '類別', all: t('filter.all'), list: opts['類別'] },
+        { key: '季節', all: t('filter.season'), list: opts['季節'] },
+        { key: '場合', all: t('filter.occasion'), list: opts['場合'] },
+        { key: '狀態', all: t('filter.status'), list: opts['狀態'] }
+      ];
+      var html = '';
+      groups.forEach(function (g) {
+        var on = !state.filters[g.key];
+        html += '<button type="button" class="chip' + (on && g.key === '類別' ? ' active' : '') + '" data-key="' + g.key + '" data-val="">' + escapeHtml(g.all) + '</button>';
+        (g.list || []).forEach(function (v) {
+          html += '<button type="button" class="chip' + (state.filters[g.key] === v ? ' active' : '') + '" data-key="' + g.key + '" data-val="' + escapeHtml(v) + '">' + escapeHtml(optLabel(v)) + '</button>';
+        });
+      });
+      $('filters').innerHTML = html;
+      Array.prototype.forEach.call($('filters').querySelectorAll('.chip'), function (btn) {
+        btn.addEventListener('click', function () {
+          var key = btn.getAttribute('data-key');
+          var val = btn.getAttribute('data-val');
+          state.filters[key] = val;
+          renderFilters();
+          renderCloset();
+        });
+      });
+    }
+
+    function cardHtml(item) {
+      var bits = [item['類別'] ? optLabel(item['類別']) : '', item['顏色'], item['季節'] ? optLabel(item['季節']) : ''].filter(Boolean).join(' · ');
+      var status = item['狀態'] && item['狀態'] !== '可穿'
+        ? '<span class="badge ' + statusClass(item['狀態']) + '">' + escapeHtml(optLabel(item['狀態'])) + '</span>'
+        : '';
+      return '<article class="card" data-id="' + escapeHtml(item['編號']) + '">' +
+        photoBlock(item, 'photo') + status + '</div>' +
+        '<div class="card-body"><h3>' + escapeHtml(item['名稱'] || t('unnamed')) + '</h3>' +
+        '<div class="meta">' + escapeHtml(bits) + '</div></div></article>';
+    }
+
+    function visibleClothes() {
+      return state.data.clothes.filter(function (item) {
+        return matchesFilters(item, state.filters, state.query);
+      });
+    }
+
+    function bindCards(rootId) {
+      Array.prototype.forEach.call($(rootId).querySelectorAll('.card'), function (el) {
+        el.addEventListener('click', function () { openItem(el.getAttribute('data-id')); });
+      });
+    }
+
+    function renderCloset() {
+      var list = visibleClothes();
+      if (!$('clothesGrid')) {
+        $('view-closet').innerHTML = '<div class="grid" id="clothesGrid"></div>';
+      }
+      if (!state.data.clothes.length) {
+        $('countBar').textContent = '';
+        $('clothesGrid').innerHTML = '<div class="empty" style="grid-column:1/-1"><h2 class="serif">' + escapeHtml(t('empty.closet.title')) + '</h2><p>' + escapeHtml(t('empty.closet.body')) + '</p><button class="btn primary" id="emptyAdd" type="button">' + escapeHtml(t('empty.closet.cta')) + '</button></div>';
+        var b = $('emptyAdd');
+        if (b) b.onclick = function () { openItem(null); };
+        return;
+      }
+      $('countBar').textContent = t('count', { shown: list.length, total: state.data.clothes.length });
+      if (!list.length) {
+        $('clothesGrid').innerHTML = '<div class="empty" style="grid-column:1/-1"><h2 class="serif">' + escapeHtml(t('empty.filter.title')) + '</h2><p>' + escapeHtml(t('empty.filter.body')) + '</p></div>';
+        return;
+      }
+      $('clothesGrid').innerHTML = list.map(cardHtml).join('');
+      bindCards('clothesGrid');
+    }
+
+    function renderToday() {
+      var season = currentSeason(state.data.today);
+      var occasion = state.todayOccasion;
+      var list = state.data.clothes.filter(function (item) {
+        if (item['狀態'] && item['狀態'] !== '可穿') return false;
+        if (item['季節'] && item['季節'] !== season && item['季節'] !== '四季') return false;
+        if (occasion && item['場合'] !== occasion) return false;
+        if (state.query) {
+          var hay = [item['名稱'], item['顏色'], item['品牌']].join(' ').toLowerCase();
+          if (hay.indexOf(state.query.toLowerCase()) === -1) return false;
+        }
+        return true;
+      });
+      $('todayIntro').innerHTML = '<div class="hero-today"><p class="kicker">' + escapeHtml(formatHeaderDate(state.data.today)) + '</p>' +
+        '<h2 class="serif">' + escapeHtml(todayHeadline(season)) + '</h2>' +
+        '<p>' + escapeHtml(t('today.body')) + '</p></div>';
+      var html = '<button type="button" class="chip' + (!occasion ? ' active' : '') + '" data-val="">' + escapeHtml(t('filter.allOccasions')) + '</button>';
+      (state.data.options['場合'] || []).forEach(function (v) {
+        html += '<button type="button" class="chip' + (occasion === v ? ' active' : '') + '" data-val="' + escapeHtml(v) + '">' + escapeHtml(optLabel(v)) + '</button>';
+      });
+      $('todayFilters').innerHTML = html;
+      Array.prototype.forEach.call($('todayFilters').querySelectorAll('.chip'), function (btn) {
+        btn.onclick = function () { state.todayOccasion = btn.getAttribute('data-val'); renderToday(); };
+      });
+      if (!list.length) {
+        $('todayGrid').innerHTML = '<div class="empty" style="grid-column:1/-1"><h2 class="serif">' + escapeHtml(t('empty.today.title')) + '</h2><p>' + escapeHtml(t('empty.today.body')) + '</p></div>';
+        return;
+      }
+      $('todayGrid').innerHTML = list.map(cardHtml).join('');
+      bindCards('todayGrid');
+    }
+
+    function clothesByIds(idsStr) {
+      var ids = String(idsStr || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+      var map = {};
+      state.data.clothes.forEach(function (c) { map[c['編號']] = c; });
+      return ids.map(function (id) { return map[id]; }).filter(Boolean);
+    }
+
+    function renderOutfits() {
+      var list = state.data.outfits;
+      if (!list.length) {
+        $('outfitsList').innerHTML = '<div class="empty"><h2 class="serif">' + escapeHtml(t('empty.outfits.title')) + '</h2><p>' + escapeHtml(t('empty.outfits.body')) + '</p><button class="btn primary" id="newOutfitBtn" type="button">' + escapeHtml(t('empty.outfits.cta')) + '</button></div>';
+        var b = $('newOutfitBtn');
+        if (b) b.addEventListener('click', function () { openOutfitEditor(null); });
+        return;
+      }
+      $('outfitsList').innerHTML = list.map(function (o) {
+        var items = clothesByIds(o['衣服編號']);
+        var thumbs = items.map(function (c) {
+          var img = photoUrl(c['照片網址']);
+          var pair = colorPair(c['顏色']);
+          if (img) return '<i style="background-image:url(\'' + escapeHtml(img) + '\')"></i>';
+          return '<i style="background:linear-gradient(160deg,' + pair[0] + ',' + pair[1] + ')">' + escapeHtml((c['名稱'] || '').slice(0, 2)) + '</i>';
+        }).join('') || '<span class="meta">' + escapeHtml(t('outfit.unmatched')) + '</span>';
+        return '<article class="outfit-card" data-id="' + escapeHtml(o['編號']) + '"><h3>' + escapeHtml(o['名稱']) +
+          '</h3><div class="meta">' + escapeHtml([o['場合'] ? optLabel(o['場合']) : '', items.length ? piecesText(items.length) : ''].filter(Boolean).join(' · ')) +
+          '</div><div class="thumbs">' + thumbs + '</div></article>';
+      }).join('');
+      Array.prototype.forEach.call($('outfitsList').querySelectorAll('.outfit-card'), function (el) {
+        el.addEventListener('click', function () { openOutfitEditor(el.getAttribute('data-id')); });
+      });
+    }
+
+    function renderAll() {
+      $('headerDate').textContent = formatHeaderDate(state.data.today) + ' · ' + optLabel(currentSeason(state.data.today));
+      renderFilters();
+      if (state.view === 'closet') renderCloset();
+      if (state.view === 'today') renderToday();
+      if (state.view === 'outfits') renderOutfits();
+    }
+
+    function applyData(data) {
+      state.data = data;
+      renderAll();
+    }
+
+    function optionTags(list, selected) {
+      return (list || []).map(function (v) {
+        return '<option value="' + escapeHtml(v) + '"' + (selected === v ? ' selected' : '') + '>' + escapeHtml(optLabel(v)) + '</option>';
+      }).join('');
+    }
+
+    function field(label, name, value, type, options) {
+      var html = '<div class="field"><label>' + label + '</label>';
+      if (type === 'select') {
+        html += '<select name="' + name + '"><option value=""></option>' + optionTags(options, value) + '</select>';
+      } else if (type === 'textarea') {
+        html += '<textarea name="' + name + '" rows="2">' + escapeHtml(value || '') + '</textarea>';
+      } else {
+        html += '<input name="' + name + '" type="' + (type || 'text') + '" value="' + escapeHtml(value || '') + '">';
+      }
+      return html + '</div>';
+    }
+
+    function segField(label, name, value, options) {
+      var html = '<div class="field"><label>' + label + '</label><div class="seg" data-name="' + name + '">';
+      (options || []).forEach(function (v) {
+        html += '<button type="button" class="' + (value === v ? 'on' : '') + '" data-val="' + escapeHtml(v) + '">' + escapeHtml(optLabel(v)) + '</button>';
+      });
+      html += '</div><input type="hidden" name="' + name + '" value="' + escapeHtml(value || '') + '"></div>';
+      return html;
+    }
+
+    function bindSeg(root) {
+      Array.prototype.forEach.call(root.querySelectorAll('.seg'), function (seg) {
+        var hidden = root.querySelector('[name="' + seg.getAttribute('data-name') + '"]');
+        Array.prototype.forEach.call(seg.querySelectorAll('button'), function (btn) {
+          btn.onclick = function () {
+            Array.prototype.forEach.call(seg.querySelectorAll('button'), function (b) { b.classList.remove('on'); });
+            btn.classList.add('on');
+            if (hidden) hidden.value = btn.getAttribute('data-val');
+          };
+        });
+      });
+    }
+
+    function closeModal() {
+      state.sheet = null;
+      $('modal').classList.add('hidden');
+      $('modal').innerHTML = '';
+    }
+
+    function openItem(id) {
+      var item = state.data.clothes.filter(function (c) { return c['編號'] === id; })[0];
+      if (!id || !item) return openEditor(null);
+      state.sheet = { type: 'item', id: id };
+      var img = photoUrl(item['照片網址']);
+      var pair = colorPair(item['顏色']);
+      var hero = img
+        ? '<div class="hero-photo" style="background-image:url(\'' + escapeHtml(img) + '\')"></div>'
+        : '<div class="hero-photo"><div class="placeholder" style="--c1:' + pair[0] + ';--c2:' + pair[1] + '">' + escapeHtml(item['名稱'] || '') + '</div></div>';
+      var pills = [
+        ['類別', item['類別']],
+        ['顏色', item['顏色']],
+        ['季節', item['季節']],
+        ['場合', item['場合']],
+        ['狀態', item['狀態']]
+      ].filter(function (pair) { return pair[1]; }).map(function (pair) {
+        var shown = pair[0] === '顏色' ? pair[1] : optLabel(pair[1]);
+        return '<span class="pill">' + escapeHtml(shown) + '</span>';
+      }).join('');
+      var rows = '';
+      if (item['品牌']) rows += '<div class="detail-row"><span>' + escapeHtml(t('field.brand')) + '</span><b>' + escapeHtml(item['品牌']) + '</b></div>';
+      if (item['存放位置']) rows += '<div class="detail-row"><span>' + escapeHtml(t('field.locationShort')) + '</span><b>' + escapeHtml(item['存放位置']) + '</b></div>';
+      if (item['上次穿著']) rows += '<div class="detail-row"><span>' + escapeHtml(t('field.lastWorn')) + '</span><b>' + escapeHtml(item['上次穿著']) + '</b></div>';
+      if (item['購入日期']) rows += '<div class="detail-row"><span>' + escapeHtml(t('field.purchased')) + '</span><b>' + escapeHtml(item['購入日期']) + '</b></div>';
+      if (item['備註']) rows += '<div class="detail-row"><span>' + escapeHtml(t('field.notes')) + '</span><b>' + escapeHtml(item['備註']) + '</b></div>';
+      $('modal').classList.remove('hidden');
+      $('modal').innerHTML = '<div class="sheet"><div class="handle"></div>' +
+        '<div class="sheet-head"><h2 class="serif">' + escapeHtml(t('detail.title')) + '</h2><button class="icon-btn" id="cancelItem" type="button" aria-label="' + escapeHtml(t('close')) + '">✕</button></div>' +
+        hero +
+        '<div class="sheet-body"><h3 class="detail-name serif">' + escapeHtml(item['名稱'] || t('unnamed')) + '</h3>' +
+        '<div class="pills">' + pills + '</div>' + rows + '</div>' +
+        '<div class="actions">' +
+          '<button class="btn primary" id="wornItem" type="button">' + escapeHtml(t('action.wore')) + '</button>' +
+          '<button class="btn ghost" id="editItem" type="button">' + escapeHtml(t('action.edit')) + '</button>' +
+          '<button class="btn danger" id="delItem" type="button">' + escapeHtml(t('action.delete')) + '</button>' +
+        '</div></div>';
+      $('cancelItem').onclick = closeModal;
+      $('modal').onclick = function (e) { if (e.target.id === 'modal') closeModal(); };
+      $('editItem').onclick = function () { openEditor(id); };
+      $('wornItem').onclick = function () {
+        run('markWorn', id).then(function (data) {
+          applyData(data); closeModal(); toast(t('toast.worn'));
+        }).catch(function (err) { toast(err.message || t('toast.updateFail')); });
+      };
+      $('delItem').onclick = function () {
+        if (!confirm(t('confirm.deleteItem'))) return;
+        run('deleteClothes', id).then(function (data) {
+          applyData(data); closeModal(); toast(t('toast.deleted'));
+        }).catch(function (err) { toast(err.message || t('toast.deleteFail')); });
+      };
+    }
+
+    function openEditor(id) {
+      var item = state.data.clothes.filter(function (c) { return c['編號'] === id; })[0] || {
+        '名稱': '', '類別': '', '顏色': '', '季節': '', '場合': '', '品牌': '', '存放位置': '',
+        '狀態': '可穿', '照片網址': '', '購入日期': '', '上次穿著': '', '備註': ''
+      };
+      var o = state.data.options;
+      var isNew = !id;
+      state.sheet = { type: 'editor', id: id || null };
+      $('modal').classList.remove('hidden');
+      $('modal').innerHTML = '<div class="sheet"><div class="handle"></div>' +
+        '<div class="sheet-head"><h2 class="serif">' + escapeHtml(isNew ? t('editor.add') : t('editor.edit')) + '</h2>' +
+        '<button class="icon-btn" id="cancelItem" type="button" aria-label="' + escapeHtml(t('close')) + '">✕</button></div>' +
+        '<div class="sheet-body">' +
+        field(t('field.name'), '名稱', item['名稱'], 'text') +
+        segField(t('field.category'), '類別', item['類別'], o['類別']) +
+        field(t('field.color'), '顏色', item['顏色'], 'text') +
+        segField(t('field.season'), '季節', item['季節'], o['季節']) +
+        segField(t('field.occasion'), '場合', item['場合'], o['場合']) +
+        '<div class="row2">' + field(t('field.brand'), '品牌', item['品牌'], 'text') + field(t('field.location'), '存放位置', item['存放位置'], 'text') + '</div>' +
+        segField(t('field.status'), '狀態', item['狀態'] || '可穿', o['狀態']) +
+        field(t('field.purchased'), '購入日期', item['購入日期'], 'date') +
+        field(t('field.photo'), '照片網址', item['照片網址'], 'url') +
+        field(t('field.notes'), '備註', item['備註'], 'textarea') +
+        '</div>' +
+        '<div class="actions">' +
+          '<button class="btn primary" id="saveItem" type="button">' + escapeHtml(t('action.save')) + '</button>' +
+        '</div></div>';
+
+      bindSeg($('modal'));
+      function readForm() {
+        var out = { '編號': id || '' };
+        Array.prototype.forEach.call($('modal').querySelectorAll('input,select,textarea'), function (el) {
+          if (el.name) out[el.name] = el.value;
+        });
+        if (item['上次穿著']) out['上次穿著'] = item['上次穿著'];
+        return out;
+      }
+      $('cancelItem').onclick = closeModal;
+      $('modal').onclick = function (e) { if (e.target.id === 'modal') closeModal(); };
+      $('saveItem').onclick = function () {
+        run('saveClothes', readForm()).then(function (data) {
+          applyData(data); closeModal(); toast(t('toast.saved'));
+        }).catch(function (err) { toast(err.message || t('toast.saveFail')); });
+      };
+    }
+
+    function openOutfitEditor(id) {
+      var outfit = state.data.outfits.filter(function (o) { return o['編號'] === id; })[0] || { '名稱': '', '場合': '', '衣服編號': '', '備註': '' };
+      var selected = String(outfit['衣服編號'] || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+      state.selectedIds = selected.slice();
+      var wearable = state.data.clothes;
+      function picker() {
+        return wearable.map(function (c) {
+          var on = state.selectedIds.indexOf(c['編號']) !== -1;
+          var img = photoUrl(c['照片網址']);
+          var pair = colorPair(c['顏色']);
+          var mini = img
+            ? '<div class="mini" style="background-image:url(\'' + escapeHtml(img) + '\')"></div>'
+            : '<div class="mini" style="background:linear-gradient(160deg,' + pair[0] + ',' + pair[1] + ')"></div>';
+          return '<div class="pick' + (on ? ' selected' : '') + '" data-id="' + escapeHtml(c['編號']) + '">' + mini +
+            '<p>' + escapeHtml(c['名稱'] || c['編號']) + '</p></div>';
+        }).join('') || '<div class="meta">' + escapeHtml(t('outfit.needClothes')) + '</div>';
+      }
+      state.sheet = { type: 'outfit', id: id || null };
+      $('modal').classList.remove('hidden');
+      $('modal').innerHTML = '<div class="sheet"><div class="handle"></div>' +
+        '<div class="sheet-head"><h2 class="serif">' + escapeHtml(id ? t('outfit.edit') : t('outfit.create')) + '</h2>' +
+        '<button class="icon-btn" id="cancelOutfit" type="button" aria-label="' + escapeHtml(t('close')) + '">✕</button></div>' +
+        '<div class="sheet-body">' +
+        field(t('field.outfitName'), '名稱', outfit['名稱'], 'text') +
+        segField(t('field.occasion'), '場合', outfit['場合'], state.data.options['場合']) +
+        field(t('field.notes'), '備註', outfit['備註'], 'textarea') +
+        '<div class="field"><label>' + escapeHtml(t('field.pick')) + '</label><div class="picker-grid" id="picker">' + picker() + '</div></div>' +
+        '</div>' +
+        '<div class="actions">' +
+          '<button class="btn primary" id="saveOutfit" type="button">' + escapeHtml(t('action.saveOutfit')) + '</button>' +
+          (id ? '<button class="btn danger" id="delOutfit" type="button">' + escapeHtml(t('action.delete')) + '</button>' : '') +
+        '</div></div>';
+      bindSeg($('modal'));
+      function bindPicker() {
+        Array.prototype.forEach.call($('picker').querySelectorAll('.pick'), function (el) {
+          el.onclick = function () {
+            var cid = el.getAttribute('data-id');
+            var i = state.selectedIds.indexOf(cid);
+            if (i === -1) state.selectedIds.push(cid);
+            else state.selectedIds.splice(i, 1);
+            el.classList.toggle('selected');
+          };
+        });
+      }
+      bindPicker();
+      $('cancelOutfit').onclick = closeModal;
+      $('modal').onclick = function (e) { if (e.target.id === 'modal') closeModal(); };
+      $('saveOutfit').onclick = function () {
+        var name = $('modal').querySelector('[name="名稱"]').value;
+        var occ = $('modal').querySelector('[name="場合"]').value;
+        var note = $('modal').querySelector('[name="備註"]').value;
+        run('saveOutfit', { '編號': id || '', '名稱': name, '場合': occ, '衣服編號': state.selectedIds, '備註': note })
+          .then(function (data) { applyData(data); closeModal(); toast(t('toast.outfitSaved')); })
+          .catch(function (err) { toast(err.message || t('toast.saveFail')); });
+      };
+      if ($('delOutfit')) {
+        $('delOutfit').onclick = function () {
+          if (!confirm(t('confirm.deleteOutfit'))) return;
+          run('deleteOutfit', id).then(function (data) {
+            applyData(data); closeModal(); toast(t('toast.outfitDeleted'));
+          }).catch(function (err) { toast(err.message || t('toast.deleteFail')); });
+        };
+      }
+    }
+
+    function setView(view) {
+      state.view = view;
+      $('view-closet').classList.toggle('hidden', view !== 'closet');
+      $('view-today').classList.toggle('hidden', view !== 'today');
+      $('view-outfits').classList.toggle('hidden', view !== 'outfits');
+      $('filters').classList.toggle('hidden', view !== 'closet');
+      $('countBar').classList.toggle('hidden', view !== 'closet');
+      $('title').textContent = view === 'today' ? t('tab.today') : view === 'outfits' ? t('tab.outfits') : t('tab.closet');
+      document.title = $('title').textContent;
+      Array.prototype.forEach.call(document.querySelectorAll('nav.tabbar button'), function (btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-view') === view);
+      });
+      $('fab').setAttribute('aria-label', view === 'outfits' ? t('fab.outfit') : t('fab.clothes'));
+      if (view === 'closet') renderCloset();
+      if (view === 'today') renderToday();
+      if (view === 'outfits') renderOutfits();
+    }
+
+    document.querySelectorAll('nav.tabbar button').forEach(function (btn) {
+      btn.addEventListener('click', function () { setView(btn.getAttribute('data-view')); });
+    });
+    $('fab').addEventListener('click', function () {
+      if (state.view === 'outfits') openOutfitEditor(null);
+      else openEditor(null);
+    });
+    $('searchToggle').addEventListener('click', function () {
+      $('searchWrap').classList.toggle('hidden');
+      if (!$('searchWrap').classList.contains('hidden')) $('search').focus();
+    });
+    $('search').addEventListener('input', function () {
+      state.query = $('search').value.trim();
+      if (state.view === 'closet') renderCloset();
+      if (state.view === 'today') renderToday();
+    });
+
+    function showSetup(msg) {
+      var el = $('setupBanner');
+      el.classList.remove('hidden');
+      el.innerHTML = msg;
+    }
+
+    function loadWardrobe() {
+      $('clothesGrid').innerHTML = '<div class="sk" style="grid-column:1/-1"><div></div><div></div></div>';
+      run('getWardrobe').then(function (data) {
+        state.ready = true;
+        state.loadError = '';
+        applyData(data);
+      }).catch(function (err) {
+        state.ready = false;
+        state.loadError = err.message || String(err);
+        $('clothesGrid').innerHTML = '<div class="empty" style="grid-column:1/-1"><h2 class="serif">' + escapeHtml(t('error.load')) + '</h2><p>' + escapeHtml(state.loadError) + '</p></div>';
+      });
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    }
+
+    $('googleSignIn').addEventListener('click', function () {
+      WardrobeAPI.signIn().then(function () {
+        $('authScreen').classList.add('hidden');
+        loadWardrobe();
+      }).catch(function (err) { toast(err.message || t('toast.signInFail')); });
+    });
+    $('authScreen').addEventListener('click', function (e) {
+      if (e.target.id === 'authScreen') return;
+    });
+
+    function needsClientId() {
+      return !WardrobeAPI.hasAppsScript() && !WardrobeAPI.needsGoogleSignIn();
+    }
+
+    function showClientIdSetup() {
+      $('countBar').textContent = '';
+      $('clothesGrid').innerHTML = '<div class="empty" style="grid-column:1/-1"><h2 class="serif">' + escapeHtml(t('setup.title')) + '</h2><p>' + escapeHtml(t('setup.body')) + '</p></div>';
+      showSetup(t('setup.banner'));
+    }
+
+    $('langZh').addEventListener('click', function () { setLang('zh'); });
+    $('langEn').addEventListener('click', function () { setLang('en'); });
+    state.lang = readStoredLang();
+    applyChrome();
+
+    $('clothesGrid').innerHTML = '<div class="sk" style="grid-column:1/-1"><div></div><div></div></div>';
+    if (WardrobeAPI.hasAppsScript()) {
+      loadWardrobe();
+    } else if (WardrobeAPI.needsGoogleSignIn()) {
+      $('authScreen').classList.remove('hidden');
+    } else {
+      showClientIdSetup();
+    }
+  </script>
+</body>
+</html>

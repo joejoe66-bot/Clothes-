@@ -1,0 +1,31 @@
+{
+  "name": "衣櫃收納",
+  "short_name": "衣櫃",
+  "description": "記下衣服，選今天穿什麼就不會忘記。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F0EA",
+  "theme_color": "#F4F0EA",
+  "lang": "zh-Hant",
+  "categories": ["lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
